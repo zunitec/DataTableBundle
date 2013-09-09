@@ -1,0 +1,20 @@
+{#
+@var actions array
+
+array(2) (
+  [show] => array(2) (
+    [route] => (string) pessoa_show
+    [role] => (string) ROLE_PESSOA_SHOW
+  )
+  [edit] => array(2) (
+    [route] => (string) pessoa_edit
+    [role] => (string) ROLE_PESSOA_EDIT
+  )
+)
+
+#}
+<div>
+    {% for action,parameters in actions %}
+    {% include 'ZuniDataTableBundle:Action:'~action~'.html.twig' with {"action" : parameters} %}
+    {% endfor %}
+</div>
