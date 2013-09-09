@@ -1,8 +1,8 @@
 {
     "name": "zuni/datatablebundle",
     "license": "MIT",
-    "type": "library",
-    "description": "Table ajax for php",
+    "type": "symfony-bundle",
+    "description": "Symfony DataTableBundle",
     "keywords": ["table","datatable"],
     "homepage": "https://github.com/zunitec/DataTableBundle",
     "authors": [
@@ -34,7 +34,7 @@
     "target-dir": "Zuni/DataTableBundle",
     "extra": {
         "branch-alias": {
-            "dev-master": "2.0.x-dev"
+            "dev-master": "1.0.x-dev"
         }
     }
 }
