@@ -1,4 +1,0 @@
-zuni_data_table:
-    resource: "@ZuniDataTableBundle/Controller/"
-    type:     annotation
-    prefix:   /
