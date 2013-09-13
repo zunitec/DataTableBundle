@@ -1,6 +1,4 @@
 <?php
- 
-
 
 namespace Zuni\DataTableBundle\Controller;
 
@@ -63,8 +61,21 @@ class DataTableController extends Controller
         $search = $request->request->get("sSearch");
         $columnOrder = $request->request->get("iSortCol_0");
         $typeOrder = $request->request->get("sSortDir_0");
+        $tableWhere = $request->request->get("tablewhere");
+        $tableWhereParam = str_replace("|", ",", $request->request->get("tablewhereparam"));
+        $dqlpart = $request->request->get("dqlpart");
         
-        return new DataTable($gets, $typeParamenters, $entity, $lenght, $start, $columnOrder, $typeOrder, $search);
+        return new DataTable($gets, $typeParamenters, $entity, $lenght, $start, $columnOrder, $typeOrder, $search, $tableWhere, $tableWhereParam? json_decode($tableWhereParam, true) : array(), $dqlpart);
+    }
+    
+    /**
+     * @Route("/publico/dataTable/js/dataTableUsage.js", name="zuni_datatable_usage")
+     */
+    public function dataTableUsageAction()
+    {
+        $response = $this->render('ZuniDataTableBundle:DataTable:jquery.dataTableUsage.js.twig', array());
+        $response->headers->set('Content-Type', 'text/javascript; charset=UTF-8');
+        return $response;
     }
     
 }

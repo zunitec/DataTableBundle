@@ -3,8 +3,9 @@
 namespace Zuni\DataTableBundle\Entity;
 
 use Doctrine\ORM\QueryBuilder;
-use Twig_Environment;
 use Symfony\Bundle\TwigBundle\TwigEngine;
+use Symfony\Component\PropertyAccess\PropertyAccess;
+use Twig_Environment;
 
 /**
  * 
@@ -26,9 +27,12 @@ class DataTable
     private $entities;
     private $aliasEntities;
     private $columns;
+    private $tableWhere;
+    private $tableWhereParam;
+    private $methodDqlPart;
     
     
-    function __construct(array $gets = array(),array $typeParamenters = array(), $entity = "", $length = 10, $start = 0, $columnOrderPos = 0, $typeOrder = "asc", $search ="")
+    function __construct(array $gets = array(), array $typeParamenters = array(), $entity = "", $length = 10, $start = 0, $columnOrderPos = 0, $typeOrder = "asc", $search ="", $tableWhere = "", array $tableWhereParam = array(), $methodDqlPart = "")
     {
         $this->setGets($gets);
         $this->setTypeParamenters($typeParamenters);
@@ -38,6 +42,9 @@ class DataTable
         $this->setColumnOrderPos($columnOrderPos);
         $this->setTypeOrder($typeOrder);
         $this->setSearch($search);
+        $this->setTableWhere($tableWhere);
+        $this->setTableWhereParam($tableWhereParam);
+        $this->setMethodDqlPart($methodDqlPart);
     }
 
     public function getId()
@@ -136,6 +143,40 @@ class DataTable
         $this->search = $search;
     }
 
+    public function getTableWhere()
+    {
+        return $this->tableWhere;
+    }
+
+    public function setTableWhere($tableWhere)
+    {
+        $this->tableWhere = $tableWhere;
+    }
+
+    public function getTableWhereParam()
+    {
+        if(!$this->tableWhereParam)
+        {
+            $this->tableWhereParam = array();
+        }
+        return $this->tableWhereParam;
+    }
+
+    public function setTableWhereParam(array $tableWhereParam)
+    {
+        $this->tableWhereParam = $tableWhereParam;
+    }
+
+    public function getMethodDqlPart()
+    {
+        return $this->methodDqlPart;
+    }
+
+    public function setMethodDqlPart($methodDqlPart)
+    {
+        $this->methodDqlPart = $methodDqlPart;
+    }
+    
     public function setEntityAndAlias($entity)
     {
         $entityAndAlias = $this->getEntityAndAliasName($entity);
@@ -350,7 +391,7 @@ class DataTable
     public function getData($entityManager, $sEcho, TwigEngine $twig, Twig_Environment $twigLoaderString)
     {
         
-        $collectionEntity = $this->getCollectionEntities(new QueryBuilder($entityManager));
+        $collectionEntity = $this->getCollectionEntities(new QueryBuilder($entityManager), $entityManager);
         
         $rows = array();
         $paramActions = null;
@@ -411,6 +452,8 @@ class DataTable
      * Valida toda a string twig de forma recursiva, e retorna , 
      * renderizado
      * 
+     * @todo Alterar método para não testar as variaveis com Twig
+     * Utilizar a classe PropertyAcess do symfony ( desempenho )
      * @param Twig_Environment $twig
      * @param stirng $string
      * @param array $parameter
@@ -479,13 +522,28 @@ TWIG;
         return "";
     }
     
+    /**
+     * 
+     * Invoca o método da entidade que possui a dql part
+     * 
+     * @param \Doctrine\ORM\EntityManager $entityManager Usado para resolver o 
+     * apelido da classe, converte ZuniPessoaBundle:Pessoa em seu namespace real
+     * @return string
+     */
+    private function getDqlPartFromMethod($entityManager)
+    {
+
+        $newInstance = $entityManager->getClassMetadata($this->getEntity())->newInstance();
+        
+        return PropertyAccess::getPropertyAccessor()->getValue($newInstance, $this->getMethodDqlPart());
+    }
     
      /**
      * Retorna uma coleção de itens com todos os requisitos para o mesmo 
      * order limit ... 
      * @todo Mudar método para o Reposioty de DataTable
      */
-    public function getCollectionEntities(QueryBuilder $query)
+    public function getCollectionEntities(QueryBuilder $query, $entityManager)
     {
         
         $query->select($this->getAliasEntities());
@@ -520,8 +578,26 @@ TWIG;
             $query->orWhere($columns." LIKE :search");
         }
         
+        if ($this->getTableWhere())
+        {
+            $query->andWhere("( ".$this->getTableWhere()." )");
+        }
+        
+        if ($this->getMethodDqlPart())
+        {
+            $query->andWhere("( ".$this->getDqlPartFromMethod($entityManager)." )");
+        }
+        
         $query->setFirstResult($this->getStart())
               ->setMaxResults($this->getLength());
+        
+        if ($this->getTableWhereParam())
+        {
+            foreach ($this->getTableWhereParam() as $param => $value)
+            {
+                $query->setParameter($param , $value);        
+            }
+        }
         
         $query->setParameter("search", "%".$this->getSearch()."%");        
         
