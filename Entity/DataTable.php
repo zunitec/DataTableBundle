@@ -9,50 +9,232 @@ use Twig_Environment;
 
 /**
  * 
+ * Entity que representa a grid do datatable js
  * 
  */
 class DataTable
 {
     
+    /**
+     *
+     * @var integer
+     */
     private $id;
+    
+    /**
+     *
+     * Métodos de acesso
+     * 
+     * @var string 
+     */
     private $gets;
+    
+    /**
+     *
+     * Tipo de parametros, pode ser ação o acesso
+     * 
+     * @var array 
+     */
     private $typeParamenters;
+    
+    /**
+     *
+     * Nome da entidade com por ex: ZuniPessoaBundle:Cidade
+     * 
+     * @var string 
+     */
     private $entity;
+    
+    /**
+     * Apelido da entidade, se a entidade for
+     * ZuniPessoaBundle:Cidade as cidade, o apelido será cidade
+     * 
+     * @var string 
+     */
     private $aliasEntity;
+    
+    /**
+     *
+     * Offset, até onde será mostrada as entidades
+     * 
+     * @var integer 
+     */
     private $length;
+    
+    /**
+     * páginação, de onde começa a mostrar a grid
+     * @var integer 
+     */
     private $start;
+    
+    /**
+     *
+     * Número da coluna que vai ser ordenada
+     * 
+     * @var integer
+     */
     private $columnOrderPos;
+    
+    /**
+     *  
+     * tipo de ordenação 
+     * 
+     * @var string ASC | DESC 
+     */
     private $typeOrder;
+    
+    /**
+     * Filtro geral do datatable
+     * @var string
+     */
     private $search;
+    
+    /**
+     *
+     */
     private $entities;
+    
+    /**
+     * array que contém todos os apelidos de todas as entidades
+     * gerenciadas no atual DQL 
+     * 
+     * @var array 
+     */
     private $aliasEntities;
+    
+    /**
+     * Todas as colunas da datatable
+     * @var array
+     */
     private $columns;
-    private $tableWhere;
-    private $tableWhereParam;
+    
+    /**
+     *
+     * Nome do método que contém um dql parte, para montar o filtro dql
+     * @var string 
+     */
     private $methodDqlPart;
     
+    /**
+     * Quaisquer parametros passados para o datatable
+     * @var string json personalizado, separador por "|" 
+     */
+    private $parameters;
     
-    function __construct(array $gets = array(), array $typeParamenters = array(), $entity = "", $length = 10, $start = 0, $columnOrderPos = 0, $typeOrder = "asc", $search ="", $tableWhere = "", array $tableWhereParam = array(), $methodDqlPart = "")
+    /**
+     * DQL parte, usado para montar o sql que busca a coleção de entidades
+     * @var stirng 
+     */
+    
+    private $dqlPart;
+    
+    /**
+     *
+     * DQL parametros, compõe o DQL parte
+     * @var array 
+     */
+    private $dqlParam;
+    
+    /**
+     *
+     * Quantidade de views que tem a table 
+     * 
+     * @var integer 
+     */
+    private $amountView;
+    
+    /**
+     * 
+     * Usado para renderizar as actions
+     * 
+     * @var TwigEngine 
+     */
+    private $twig;
+    /**
+     *
+     * Usado para renderizar os métodos
+     * 
+     * @var Twig_Environment 
+     */
+    private $twigLoaderString;
+    
+    /**
+     * Construtor
+     */
+    public function __construct(\Symfony\Component\HttpFoundation\Request $request, TwigEngine $twig, Twig_Environment $twigLoaderString, $entity = "")
     {
-        $this->setGets($gets);
-        $this->setTypeParamenters($typeParamenters);
-        $this->setEntityAndAlias($entity);
-        $this->setLength($length);
-        $this->setStart($start);
-        $this->setColumnOrderPos($columnOrderPos);
-        $this->setTypeOrder($typeOrder);
-        $this->setSearch($search);
-        $this->setTableWhere($tableWhere);
-        $this->setTableWhereParam($tableWhereParam);
-        $this->setMethodDqlPart($methodDqlPart);
+        $this->bootFromRequest($request, $entity);
+        $this->setTwig($twig);
+        $this->setTwigLoaderString($twigLoaderString);
     }
 
-    public function getId()
+    /**
+     * 
+     * Iniciliza DataTable Com o request
+     * 
+     * @param \Symfony\Component\HttpFoundation\Request $request
+     */
+    private function bootFromRequest(\Symfony\Component\HttpFoundation\Request $request, $entity = "")
+    {
+        
+        $gets = $request->request->get("gets")? \explode(",", $request->request->get("gets")) : array() ;
+        $typeParamenters = $request->request->get("typeParamenter")? \explode(",", $request->request->get("typeParamenter")) : array();
+        
+        $entity = $entity? $entity : $request->get("entity");
+        
+        $this->setGets($gets ? $gets : array());
+        $this->setTypeParamenters($typeParamenters? $typeParamenters : array());
+        $this->setEntityAndAlias($entity);
+        $this->setLength($request->request->get("iDisplayLength"));
+        $this->setStart($request->request->get("iDisplayStart"));
+        $this->setColumnOrderPos($request->request->get("iSortCol_0"));
+        $this->setTypeOrder($request->request->get("sSortDir_0"));
+        $this->setSearch($request->request->get("sSearch"));
+        $this->setMethodDqlPart($request->request->get("methodDqlPart"));
+        $this->setParameters($request->request->get("parameters"));
+        $this->setAmountView($request->request->getInt("sEcho"));
+        
+    }
+    
+    /**
+     * Não implementado
+     * @return int
+     */
+    private function getId()
     {
         return $this->id;
     }
 
+    /**
+     * 
+     * Add new Column
+     * 
+     * @param string $stringGet Prperty access
+     * @return \Zuni\DataTableBundle\Entity\DataTable
+     */
+    public function addColumn($stringGet, $alias = "e")
+    {
+        $this->gets[] = $alias.".".$stringGet;
+        $this->typeParamenters[] = 'access';
 
+        return $this;
+    }
+
+    /**
+     * 
+     * Add new Column Action
+     * 
+     * @param array $actions 
+     * @return \Zuni\DataTableBundle\Entity\DataTable
+     */
+    public function addColumnAction(array $actions)
+    {
+        $this->gets[] = $actions;
+        $this->typeParamenters[] = 'action';
+
+        return $this;
+    }
+    
     public function getGets()
     {
         return $this->gets;
@@ -72,7 +254,7 @@ class DataTable
     {
         $this->typeParamenters = $typeParamenters;
     }
-        
+
     public function getEntity()
     {
         return $this->entity;
@@ -92,7 +274,7 @@ class DataTable
     {
         $this->aliasEntity = $aliasEntity;
     }
-    
+
     public function getLength()
     {
         return $this->length;
@@ -143,30 +325,6 @@ class DataTable
         $this->search = $search;
     }
 
-    public function getTableWhere()
-    {
-        return $this->tableWhere;
-    }
-
-    public function setTableWhere($tableWhere)
-    {
-        $this->tableWhere = $tableWhere;
-    }
-
-    public function getTableWhereParam()
-    {
-        if(!$this->tableWhereParam)
-        {
-            $this->tableWhereParam = array();
-        }
-        return $this->tableWhereParam;
-    }
-
-    public function setTableWhereParam(array $tableWhereParam)
-    {
-        $this->tableWhereParam = $tableWhereParam;
-    }
-
     public function getMethodDqlPart()
     {
         return $this->methodDqlPart;
@@ -176,14 +334,122 @@ class DataTable
     {
         $this->methodDqlPart = $methodDqlPart;
     }
+
+    public function getParameters()
+    {
+        return $this->parameters;
+    }
+
+    public function setParameters($parameters)
+    {
+        $this->parameters = $parameters;
+    }
     
+    /**
+     * 
+     * Get Dql Part
+     * 
+     * @return string
+     */
+    public function getDqlPart()
+    {
+        return $this->dqlPart;
+    }
+
+    /**
+     * 
+     * Set DQL part 
+     * 
+     * @param string
+     */
+    public function setDqlPart($dqlPart)
+    {
+        $this->dqlPart = $dqlPart;
+    }
+
+    /**
+     * 
+     * Get Dql param
+     * 
+     * @return array
+     */
+    public function getDqlParam()
+    {
+        if (!$this->dqlParam)
+        {
+            $this->dqlParam = array();
+        }
+        
+        return $this->dqlParam;
+    }
+    
+    /**
+     * 
+     * Set Dql parameters
+     * 
+     * @param array $dqlParam
+     */
+    public function setDqlParam(array $dqlParam)
+    {
+        $this->dqlParam = $dqlParam;
+    }
+    
+    /**
+     * 
+     * Get Amount View
+     * 
+     * @return integer
+     */
+    public function getAmountView()
+    {
+        return $this->amountView;
+    }
+
+    /**
+     * 
+     * Set Amount View
+     * 
+     * @param integer $amountView
+     */
+    public function setAmountView($amountView)
+    {
+        $this->amountView = $amountView;
+    }
+
+    /**
+     * 
+     * Set Twig Engine
+     * 
+     * @param \Symfony\Bundle\TwigBundle\TwigEngine $twig
+     */
+    public function setTwig(TwigEngine $twig)
+    {
+        $this->twig = $twig;
+    }
+
+    /**
+     * 
+     * Set Twig Environment usado para renderizar as actions
+     * 
+     * @param Twig_Environment $twigLoaderString
+     */
+    public function setTwigLoaderString(Twig_Environment $twigLoaderString)
+    {
+        $this->twigLoaderString = $twigLoaderString;
+    }
+
+    /**
+     * 
+     * Separa o apelido do nome da entidade, e seta os dois atributos
+     * 
+     * @param strin $entity ZuniPessoaBundle:Cidade as cidade
+     */
     public function setEntityAndAlias($entity)
     {
         $entityAndAlias = $this->getEntityAndAliasName($entity);
         $this->setAliasEntity($entityAndAlias['alias']);
         $this->setEntity($entityAndAlias['entity']);
     }
-    
 
     /**
      * Retirna um array assoc com o nome da entity e se alias 
@@ -206,11 +472,11 @@ class DataTable
         $paramReturn = array();
         $entityParam = \str_replace("AS", "as", $entityParam);
         list($paramReturn["entity"] , $paramReturn["alias"]) = \explode("as", \trim($entityParam), 2);
-        $paramReturn["entity"] = \trim($paramReturn["entity"]); 
+        $paramReturn["entity"] = \trim($paramReturn["entity"]);
         $paramReturn["alias"] = \trim($paramReturn["alias"]);
         return $paramReturn;
     }
-    
+
     /**
      * Retorna todas as entities que serão necessarias para pegar os 
      * valores de gets com nome e apelido 
@@ -226,7 +492,7 @@ class DataTable
     {
         if (!$this->entities)
         {
-            
+
             $typeParamenters = $this->getTypeParamenters();
             foreach ($this->getGets() as $key => $get)
             {
@@ -236,16 +502,15 @@ class DataTable
                 }
             }
         }
-        
-        if(!$this->entities)
+
+        if (!$this->entities)
         {
             $this->entities = array();
         }
-        
+
         return $this->entities;
     }
-    
-    
+
     /**
      * 
      * Valida todoas as classes usadas para ter acesso ao método
@@ -255,24 +520,23 @@ class DataTable
      */
     private function setAssociatedEntitiesRecursive($get)
     {
-        
+
         $get = $this->clrearMetodoTwig($get);
-        
+
         $separate = \explode(".", $get);
-        
+
         if (count($separate) != 2)
         {
             $nameTable = $separate[1];
 
-            if(empty($this->entities[$nameTable]))
+            if (empty($this->entities[$nameTable]))
             {
                 $this->entities[$nameTable] = array();
-                $this->entities[$nameTable]['alias'] = "t".count($this->entities);
+                $this->entities[$nameTable]['alias'] = "t" . count($this->entities);
                 $this->entities[$nameTable]['previous'] = $separate[0];
-                
+
                 unset($separate[0]);
                 $this->setAssociatedEntitiesRecursive(\implode(".", $separate));
-                
             }
             else
             {
@@ -282,28 +546,27 @@ class DataTable
             }
         }
     }
-    
+
     /**
      * Com todos os apelidos de classes que a data table possui
      * @return array
      */
     public function getAliasEntities()
     {
-        
+
         if (!$this->aliasEntities)
         {
             $this->aliasEntities = array($this->getAliasEntity());
-            
+
             foreach ($this->getAssociatedEntities() as $associatedEntity)
             {
                 $this->aliasEntities[] = $associatedEntity['alias'];
             }
-            
         }
-        
+
         return $this->aliasEntities;
     }
-    
+
     /**
      * Retorna a coluna que será ordenada
      * 
@@ -319,18 +582,17 @@ class DataTable
         $columns = $this->getColumns();
         return $columns[$this->getColumnOrderPos()];
     }
-    
+
     /**
      * Limpa os filtros da string twig 
      * @param string $stringTwig
      */
     private function clrearMetodoTwig($stringTwig)
     {
-        $stringTwig = explode("|", $stringTwig , 2);
+        $stringTwig = explode("|", $stringTwig, 2);
         return $stringTwig[0];
     }
-    
-    
+
     /**
      * 
      * Retorna todas as colunas com e suas classs com apelidos 
@@ -343,16 +605,16 @@ class DataTable
     {
         if (!$this->columns)
         {
-            
+
             $this->columns = array();
-            
+
             $typeParam = $this->getTypeParamenters();
-            
+
             foreach ($this->getGets() as $key => $get)
             {
-                if($typeParam[$key] === 'access')
+                if ($typeParam[$key] === 'access')
                 {
-                    
+
                     $getExploded = \explode(".", $get);
 
                     $classOrder = $getExploded[count($getExploded) - 2];
@@ -369,32 +631,32 @@ class DataTable
                         $aliasEntityClassOrder = $this->getAliasEntity();
                     }
 
-                    $this->columns[] = $aliasEntityClassOrder.".".$columnOrder;
-                
+                    $this->columns[] = $aliasEntityClassOrder . "." . $columnOrder;
                 }
             }
-            
         }
-        
+
         return $this->columns;
     }
-    
+
     /**
      * 
      * Retorna um array contendo a lista de Entities para montar a grid 
      * 
-     * @param type $entityManager
-     * @param string $sEcho parametro que vem por post 
+     * @param type $entityManager Usado para montar o QueryBuilder
      * @param \Symfony\Bundle\TwigBundle\TwigEngine $twig
+     * @param \ArrayObject $collectionEntity Coleção de entidades
      * @return array
      */
-    public function getData($entityManager, $sEcho, TwigEngine $twig, Twig_Environment $twigLoaderString)
+    public function getData($entityManager, $collectionEntity = null)
     {
-        
-        $collectionEntity = $this->getCollectionEntities(new QueryBuilder($entityManager), $entityManager);
-        
+
+        if (!$collectionEntity)
+        {
+            $collectionEntity = $this->getCollectionEntities(new QueryBuilder($entityManager), $entityManager);
+        }
+
         $rows = array();
-        $paramActions = null;
         foreach ($collectionEntity as $entity)
         {
             $row = array();
@@ -402,33 +664,36 @@ class DataTable
             {
                 $get = $this->getGets();
                 $types = $this->getTypeParamenters();
-                
-                if($types[$i] === "access"){
-                    $row[] = $this->getValueFromSyntaxTwig($twigLoaderString, $get[$i], array($this->getAliasEntity() => $entity));
-                }else{
-                    
-                    if(!$paramActions)
+
+                if ($types[$i] === "access")
+                {
+                    $row[] = $this->getValueFromSyntaxTwig($this->twigLoaderString, $get[$i], array($this->getAliasEntity() => $entity));
+                }
+                else
+                {
+
+                    if (!is_array($get[$i]))
                     {
-                        $paramActions = json_decode("{".str_replace("|", ",", $get[$i])."}", true);
+                        $get[$i] = json_decode("{" . str_replace("|", ",", $get[$i]) . "}", true);
                     }
-                    
-                    $row[] = $this->renderActions($twig, $paramActions , $entity);
+
+                    $row[] = $this->renderActions($this->twig, $get[$i], $entity);
                 }
             }
-            
+
             $rows[] = $row;
         }
-        
+
         $amountFromEntity = $this->getAmountFromEntity(new QueryBuilder($entityManager));
-        
+
         return $returnData = array(
-		"sEcho" => $sEcho,
-		"iTotalRecords" => $amountFromEntity,
-		"iTotalDisplayRecords" => $amountFromEntity,
-		"aaData" => $rows
-	);
+            "sEcho" => $this->getAmountView(),
+            "iTotalRecords" => $amountFromEntity,
+            "iTotalDisplayRecords" => $amountFromEntity,
+            "aaData" => $rows
+        );
     }
-    
+
     /**
      * Renderiza o html das ações
      * 
@@ -439,14 +704,21 @@ class DataTable
         return $twig->render("ZuniDataTableBundle:DataTable:actions.html.twig", array("actions" => $actions, "entity" => $entity));
     }
     
+    /**
+     * 
+     * Retorna a quantidade total de entidades que tem no banco 
+     * 
+     * @param \Doctrine\ORM\QueryBuilder $query
+     * @return integer
+     */
     private function getAmountFromEntity(QueryBuilder $query)
     {
-        $query->select('COUNT('.$this->getAliasEntity().')');
-        $query->from($this->getEntity(),  $this->getAliasEntity());
+        $query->select('COUNT(' . $this->getAliasEntity() . ')');
+        $query->from($this->getEntity(), $this->getAliasEntity());
 
         return $query->getQuery()->getSingleScalarResult();
     }
-    
+
     /**
      * 
      * Valida toda a string twig de forma recursiva, e retorna , 
@@ -466,24 +738,24 @@ class DataTable
         {
             return true;
         }
-        
+
         $stringConcat = $stringExploded[0];
-        
+
         for ($i = 1; $i < $posTest; $i++)
         {
-            $stringConcat .= ".".$stringExploded[$i];
+            $stringConcat .= "." . $stringExploded[$i];
         }
-        
-        $valid = ((boolean)\trim($twig->render($this->createStringTwigTest($stringConcat), $parameter)));
-        
-        if(count($stringExploded) >= $posTest + 1 && $valid)
+
+        $valid = ((boolean) \trim($twig->render($this->createStringTwigTest($stringConcat), $parameter)));
+
+        if (count($stringExploded) >= $posTest + 1 && $valid)
         {
             $valid = $this->isValueValidFromSyntaxTwig($twig, $string, $parameter, ++$posTest);
         }
-        
+
         return $valid;
     }
-    
+
     /**
      * Cria a stirng de teste
      * @param string $valueTest
@@ -491,7 +763,7 @@ class DataTable
      */
     private function createStringTwigTest($valueTest)
     {
-                $stringTest = <<<TWIG
+        $stringTest = <<<TWIG
                 {% if {$valueTest} is not null %}
                 {{true}}
                 {% else %}
@@ -500,7 +772,7 @@ class DataTable
 TWIG;
         return $stringTest;
     }
-    
+
     /**
      * 
      * Retorna a string twig renderezida com os filtros 
@@ -513,15 +785,15 @@ TWIG;
     private function getValueFromSyntaxTwig(Twig_Environment $twig, $string, array $parameter)
     {
         $validString = $this->isValueValidFromSyntaxTwig($twig, $this->clrearMetodoTwig($string), $parameter);
-        
+
         if ($validString)
         {
-            return $twig->render("{{".\trim($string)."}}", $parameter);
+            return $twig->render("{{" . \trim($string) . "}}", $parameter);
         }
-        
+
         return "";
     }
-    
+
     /**
      * 
      * Invoca o método da entidade que possui a dql part
@@ -534,74 +806,119 @@ TWIG;
     {
 
         $newInstance = $entityManager->getClassMetadata($this->getEntity())->newInstance();
-        
+
         return PropertyAccess::getPropertyAccessor()->getValue($newInstance, $this->getMethodDqlPart());
     }
     
-     /**
+    /**
+     * 
+     * Converte o DQL part passado, para o verdadeira pedaço DQL 
+     * com os apelidos da entidade
+     * 
+     * @param string $param
+     * @param array $alias Apelidos de todos os relacionamenstos 
+     */
+    private function getRealDqlPart($dqlPart, $alias)
+    {
+        $open = strpos($dqlPart, "{");
+        
+        if($open === false)
+        {
+            return $dqlPart;
+        }
+        
+        $open++;
+        
+        $close = strpos($dqlPart, "}");
+        $pieceDql = substr($dqlPart, $open, $close - $open);
+        
+        $realPieceDql = $this->getAliasEntity().".".$pieceDql;
+        
+        if (substr_count($realPieceDql, ".") > 1)
+        {
+            $realPieceDqlExploded = explode(".", $realPieceDql);
+            $entityName = $realPieceDqlExploded[count($realPieceDqlExploded) - 2];
+            $entityValue = $realPieceDqlExploded[count($realPieceDqlExploded) - 1];
+            
+            $realPieceDql = $alias[$entityName]['alias'].".".$entityValue;
+        }
+        
+        $dqlPart = str_replace("{{$pieceDql}}", $realPieceDql, $dqlPart);
+        
+        if(strpos($dqlPart, "{") !== false)
+        {
+            $dqlPart = $this->getRealDqlPart($dqlPart, $alias);
+        }
+        
+        return $dqlPart;
+    }
+
+    /**
      * Retorna uma coleção de itens com todos os requisitos para o mesmo 
      * order limit ... 
      * @todo Mudar método para o Reposioty de DataTable
      */
     public function getCollectionEntities(QueryBuilder $query, $entityManager)
     {
-        
+
         $query->select($this->getAliasEntities());
         $query->from($this->getEntity(), $this->getAliasEntity());
-        
+
         $associatedEntities = $this->getAssociatedEntities();
         $aliasJoinClass = "";
-        
+
         foreach ($associatedEntities as $key => $assicuatedEntity)
         {
             if (isset($associatedEntities[$assicuatedEntity['previous']]))
             {
-                $aliasJoinClass= $associatedEntities[$assicuatedEntity['previous']]['alias'];
+                $aliasJoinClass = $associatedEntities[$assicuatedEntity['previous']]['alias'];
             }
             else
             {
-                $aliasJoinClass= $this->getAliasEntity();
+                $aliasJoinClass = $this->getAliasEntity();
             }
-            
-            $query->leftJoin($aliasJoinClass.".".$key, $assicuatedEntity['alias']);
+
+            $query->leftJoin($aliasJoinClass . "." . $key, $assicuatedEntity['alias']);
         }
-        
-        
+
+
         $typeGet = $this->getTypeParamenters();
         if ($typeGet[$this->getColumnOrderPos()] == "access")
         {
             $query->orderBy($this->getColumnOrder(), $this->getTypeOrder());
         }
-        
+
         foreach ($this->getColumns() as $columns)
         {
-            $query->orWhere($columns." LIKE :search");
+            $query->orWhere($columns . " LIKE :search");
+        }
+
+        if ($this->getDqlPart())
+        {
+            $query->andWhere("( " . $this->getRealDqlPart($this->getDqlPart(), $associatedEntities) . " )");
         }
         
-        if ($this->getTableWhere())
-        {
-            $query->andWhere("( ".$this->getTableWhere()." )");
-        }
         
         if ($this->getMethodDqlPart())
         {
-            $query->andWhere("( ".$this->getDqlPartFromMethod($entityManager)." )");
+            $query->andWhere("( " . $this->getDqlPartFromMethod($entityManager) . " )");
         }
-        
+
         $query->setFirstResult($this->getStart())
-              ->setMaxResults($this->getLength());
-        
-        if ($this->getTableWhereParam())
+                ->setMaxResults($this->getLength());
+
+        if ($this->getDqlParam())
         {
-            foreach ($this->getTableWhereParam() as $param => $value)
+            foreach ($this->getDqlParam() as $param => $value)
             {
-                $query->setParameter($param , $value);        
+                $query->setParameter($param, $value);
             }
         }
-        
-        $query->setParameter("search", "%".$this->getSearch()."%");        
-        
+
+        $query->setParameter("search", "%" . $this->getSearch() . "%");
+
         return $query->getQuery()->getResult();
     }
-    
+
+
 }

@@ -39,43 +39,10 @@ class DataTableController extends Controller
      */
     public function getData(Request $request) 
     {
-        $dataTable = $this->createDataTableFromRequest($request);
         $twigLoaderString = clone $this->get('twig');
         $twigLoaderString->setLoader(new Twig_Loader_String());
-        return $dataTable->getData($this->getDoctrine()->getManager(), $request->request->getInt("sEcho"), $this->get("templating"), $twigLoaderString);
-    }
-    
-    
-    /**
-     * Instancia um DataTable a partir de um request
-     * @param Request $request
-     * @return DataTable
-     */
-    private function createDataTableFromRequest(Request $request)
-    {
-        $gets = \explode(",", $request->request->get("gets"));
-        $typeParamenters = \explode(",", $request->request->get("typeParamenter"));
-        $entity = $request->get("entity");
-        $lenght = $request->request->get("iDisplayLength");
-        $start = $request->request->get("iDisplayStart");
-        $search = $request->request->get("sSearch");
-        $columnOrder = $request->request->get("iSortCol_0");
-        $typeOrder = $request->request->get("sSortDir_0");
-        $tableWhere = $request->request->get("tablewhere");
-        $tableWhereParam = str_replace("|", ",", $request->request->get("tablewhereparam"));
-        $dqlpart = $request->request->get("dqlpart");
-        
-        return new DataTable($gets, $typeParamenters, $entity, $lenght, $start, $columnOrder, $typeOrder, $search, $tableWhere, $tableWhereParam? json_decode($tableWhereParam, true) : array(), $dqlpart);
-    }
-    
-    /**
-     * @Route("/publico/dataTable/js/dataTableUsage.js", name="zuni_datatable_usage")
-     */
-    public function dataTableUsageAction()
-    {
-        $response = $this->render('ZuniDataTableBundle:DataTable:jquery.dataTableUsage.js.twig', array());
-        $response->headers->set('Content-Type', 'text/javascript; charset=UTF-8');
-        return $response;
+        $dataTable = new DataTable($request, $this->get("templating"), $twigLoaderString);
+        return $dataTable->getData($this->getDoctrine()->getManager());
     }
     
 }

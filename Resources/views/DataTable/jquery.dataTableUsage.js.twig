@@ -3,7 +3,7 @@
 $(document).ready(function(){
     
     
-    var $buttonDeleteTable;
+   var $buttonDeleteTable;
     
     /**
      * Gera o modal de confirmação da exclusão
@@ -52,16 +52,43 @@ $(document).ready(function(){
    $.fn.extractPrametersFromGrid = function(jTable)
    {
 
-
        var parameters = {
-           "entity" : jTable.data("table-entity"),
-           "numberOfColumns" : 0,
-           "gets" : [],
-           "typeParamenter" : [],
-           "columns" : [],
-           "tablewhere" : jTable.data("table-where") ? jTable.data("table-where") : "" ,
-           "tablewhereparam" : jTable.data("table-param") ? jTable.data("table-param") : "",
-           "methodDqlPart" : jTable.data("method-dqlpart") ? jTable.data("method-dqlpart") : ""
+           
+            /**
+             * Entity base da grid
+             */
+            "entity" : jTable.data("table-entity"),
+            /**
+             * número de colunas que tem na grid
+             */
+            "numberOfColumns" : 0,
+            /**
+             * Métodos de acesso para pagar o valor 
+             */
+            "gets" : [],
+            /**
+             * tipo de coluna, pode ser de acesso ou de ação 
+             */
+            "typeParamenter" : [],
+            /**
+             * parametros da coluna, como largura classe e etc.
+             */
+            "columns" : [],
+            /**
+             * Nome do método da entity que tem um prefixo DQL para trazer
+             * todas as entidades, ( ativo = 1) por ex
+             */
+            "methodDqlPart" : jTable.data("method-dqlpart") ? jTable.data("method-dqlpart") : "",
+            /**
+             * Rota que responde o json de entidades
+             */
+            "route" : jTable.data("route") ? jTable.data("route") : null,
+            /**
+             * parametros que são passador para a rota, poderão ser usados 
+             * de quaisquer forma
+             * OBS : deverá ser passado no formato json, trocando ','(virgula) por '|'(pipe)
+             */
+            "parameters" : jTable.data("route") ? jTable.data("route") : null
        };
 
        /**
@@ -69,8 +96,10 @@ $(document).ready(function(){
         */
        jTable.find("th").each(function(index, element){
 
-            parameters.gets.push($(element).data("table-get"));     
-            parameters.typeParamenter.push($(element).data("table-column-type") ? $(element).data("table-column-type") : "access");
+            if($(element).data("table-get")){
+                parameters.gets.push($(element).data("table-get"));     
+                parameters.typeParamenter.push($(element).data("table-column-type") ? $(element).data("table-column-type") : "access");
+            }
             var sort = null;
             $(element).data("table-column-type")? sort = false : sort = true;
             var sWidth = $(element).data("table-width") ? $(element).data("table-width") : null;
@@ -115,7 +144,7 @@ $(document).ready(function(){
                "aoColumns" : paramenters.columns ,
                "bProcessing": true,
                "bServerSide": true,
-               "sAjaxSource": "{{path("zuni_datatable_datatable_grid")}}",
+               "sAjaxSource": paramenters.route ? paramenters.route : "{{path("zuni_datatable_datatable_grid")}}",
                "sServerMethod": "POST",
                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
                    $(nRow).find(".datatable-btn").tooltip();
@@ -126,9 +155,8 @@ $(document).ready(function(){
                    aoData.push({"name": "gets", "value": paramenters.gets});
                    aoData.push({"name": "numberOfColumns", "value": paramenters.numberOfColumns});
                    aoData.push({"name": "entity", "value": paramenters.entity});
-                   aoData.push({"name": "tablewhere", "value": paramenters.tablewhere});
-                   aoData.push({"name": "tablewhereparam", "value": paramenters.tablewhereparam});
-                   aoData.push({"name": "dqlpart", "value": paramenters.methodDqlPart});
+                   aoData.push({"name": "methodDqlPart", "value": paramenters.methodDqlPart});
+                   aoData.push({"name": "parameters", "value": paramenters.parameters});
 
                },
                "fnPreDrawCallback": function( oSettings ) {
@@ -175,7 +203,7 @@ $(document).ready(function(){
    $.fn.createDataTable = function(jTable)
    {
 
-       jTable.addClass("table table-striped table-bordered table-hover") ;
+       jTable.addClass("data-table-server-side table table-striped table-bordered table-hover") ;
 
        var paramenters = $.fn.extractPrametersFromGrid(jTable);
 
@@ -198,6 +226,8 @@ $(document).ready(function(){
                }
            }
        });
+
+       $.fn.unlockedPortlet(jTable);
 
    };
 
