@@ -45,4 +45,14 @@ class DataTableController extends Controller
         return $dataTable->getData($this->getDoctrine()->getManager());
     }
     
+    /**
+     * @Route("/publico/dataTable/js/dataTableUsage.js", name="zuni_datatable_usage")
+     */
+    public function dataTableUsageAction()
+    {
+        $response = $this->render('ZuniDataTableBundle:DataTable:jquery.dataTableUsage.js.twig', array());
+        $response->headers->set('Content-Type', 'text/javascript; charset=UTF-8');
+        return $response;
+    }
+    
 }
