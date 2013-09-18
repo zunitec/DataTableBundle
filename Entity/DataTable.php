@@ -335,12 +335,21 @@ class DataTable
         $this->methodDqlPart = $methodDqlPart;
     }
 
+    public function getParameter($index)
+    {
+        return array_key_exists($index, $this->parameters)? $this->parameters[$index] : null ;
+    }
+    
     public function getParameters()
     {
         
         if ($this->parameters && !is_array($this->parameters))
         {
             $this->parameters = json_decode("{".str_replace("|", ",", $this->parameters)."}", true);
+        }
+        
+        if (!$this->parameters) {
+            $this->parameters = array();
         }
         
         return $this->parameters;
