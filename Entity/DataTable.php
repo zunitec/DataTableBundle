@@ -339,7 +339,7 @@ class DataTable
     {
         $parameters = $this->getParameters();
         
-        return array_key_exists($index, $parameters)? $parameters[$index] : null ;
+        return \array_key_exists($index, $parameters)? $parameters[$index] : null ;
     }
     
     public function getParameters()
