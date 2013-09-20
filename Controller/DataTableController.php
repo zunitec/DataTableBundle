@@ -41,18 +41,10 @@ class DataTableController extends Controller
     {
         $twigLoaderString = clone $this->get('twig');
         $twigLoaderString->setLoader(new Twig_Loader_String());
-        $dataTable = new DataTable($request, $this->get("templating"), $twigLoaderString);
+        $dataTable = new DataTable($request->request->get("entity"), $this->get("templating"), $twigLoaderString);
+        $dataTable->bootFromRequest($request);
         return $dataTable->getData($this->getDoctrine()->getManager());
     }
     
-    /**
-     * @Route("/publico/dataTable/js/dataTableUsage.js", name="zuni_datatable_usage")
-     */
-    public function dataTableUsageAction()
-    {
-        $response = $this->render('ZuniDataTableBundle:DataTable:jquery.dataTableUsage.js.twig', array());
-        $response->headers->set('Content-Type', 'text/javascript; charset=UTF-8');
-        return $response;
-    }
     
 }

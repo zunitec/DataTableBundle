@@ -14,13 +14,13 @@ use Twig_Environment;
  */
 class DataTable
 {
-    
+
     /**
      *
      * @var integer
      */
     private $id;
-    
+
     /**
      *
      * Métodos de acesso
@@ -28,7 +28,7 @@ class DataTable
      * @var string 
      */
     private $gets;
-    
+
     /**
      *
      * Tipo de parametros, pode ser ação o acesso
@@ -36,7 +36,7 @@ class DataTable
      * @var array 
      */
     private $typeParamenters;
-    
+
     /**
      *
      * Nome da entidade com por ex: ZuniPessoaBundle:Cidade
@@ -44,7 +44,7 @@ class DataTable
      * @var string 
      */
     private $entity;
-    
+
     /**
      * Apelido da entidade, se a entidade for
      * ZuniPessoaBundle:Cidade as cidade, o apelido será cidade
@@ -52,7 +52,7 @@ class DataTable
      * @var string 
      */
     private $aliasEntity;
-    
+
     /**
      *
      * Offset, até onde será mostrada as entidades
@@ -60,13 +60,13 @@ class DataTable
      * @var integer 
      */
     private $length;
-    
+
     /**
      * páginação, de onde começa a mostrar a grid
      * @var integer 
      */
     private $start;
-    
+
     /**
      *
      * Número da coluna que vai ser ordenada
@@ -74,7 +74,7 @@ class DataTable
      * @var integer
      */
     private $columnOrderPos;
-    
+
     /**
      *  
      * tipo de ordenação 
@@ -82,18 +82,18 @@ class DataTable
      * @var string ASC | DESC 
      */
     private $typeOrder;
-    
+
     /**
      * Filtro geral do datatable
      * @var string
      */
     private $search;
-    
+
     /**
      *
      */
     private $entities;
-    
+
     /**
      * array que contém todos os apelidos de todas as entidades
      * gerenciadas no atual DQL 
@@ -101,40 +101,39 @@ class DataTable
      * @var array 
      */
     private $aliasEntities;
-    
+
     /**
      * Todas as colunas da datatable
      * @var array
      */
     private $columns;
-    
+
     /**
      *
      * Nome do método que contém um dql parte, para montar o filtro dql
      * @var string 
      */
     private $methodDqlPart;
-    
+
     /**
      * Quaisquer parametros passados para o datatable
      * @var string json personalizado, separador por "|" 
      */
     private $parameters;
-    
+
     /**
      * DQL parte, usado para montar o sql que busca a coleção de entidades
      * @var stirng 
      */
-    
     private $dqlPart;
-    
+
     /**
      *
      * DQL parametros, compõe o DQL parte
      * @var array 
      */
     private $dqlParam;
-    
+
     /**
      *
      * Quantidade de views que tem a table 
@@ -142,7 +141,7 @@ class DataTable
      * @var integer 
      */
     private $amountView;
-    
+
     /**
      * 
      * Usado para renderizar as actions
@@ -150,6 +149,7 @@ class DataTable
      * @var TwigEngine 
      */
     private $twig;
+
     /**
      *
      * Usado para renderizar os métodos
@@ -157,13 +157,13 @@ class DataTable
      * @var Twig_Environment 
      */
     private $twigLoaderString;
-    
+
     /**
      * Construtor
      */
-    public function __construct(\Symfony\Component\HttpFoundation\Request $request, TwigEngine $twig, Twig_Environment $twigLoaderString, $entity = "")
+    public function __construct($entity, TwigEngine $twig, Twig_Environment $twigLoaderString)
     {
-        $this->bootFromRequest($request, $entity);
+        $this->setEntityAndAlias($entity);
         $this->setTwig($twig);
         $this->setTwigLoaderString($twigLoaderString);
     }
@@ -173,18 +173,24 @@ class DataTable
      * Iniciliza DataTable Com o request
      * 
      * @param \Symfony\Component\HttpFoundation\Request $request
+     * @return DataTable 
      */
-    private function bootFromRequest(\Symfony\Component\HttpFoundation\Request $request, $entity = "")
+    public function bootFromRequest(\Symfony\Component\HttpFoundation\Request $request)
     {
+        if ($request->get("entity")) {
+            $this->setEntityAndAlias($request->get("entity"));
+        }
+
+        if ($request->request->get("typeParamenter")) {
+            $typeParamenters =\explode(",", $request->request->get("typeParamenter"));
+            $this->setTypeParamenters($typeParamenters);
+        }
         
-        $gets = $request->request->get("gets")? \explode(",", $request->request->get("gets")) : array() ;
-        $typeParamenters = $request->request->get("typeParamenter")? \explode(",", $request->request->get("typeParamenter")) : array();
+        if ($request->request->get("gets")) {
+            $gets = \explode(",", $request->request->get("gets"));
+            $this->setGets($gets);
+        }
         
-        $entity = $entity? $entity : $request->get("entity");
-        
-        $this->setGets($gets ? $gets : array());
-        $this->setTypeParamenters($typeParamenters? $typeParamenters : array());
-        $this->setEntityAndAlias($entity);
         $this->setLength($request->request->get("iDisplayLength"));
         $this->setStart($request->request->get("iDisplayStart"));
         $this->setColumnOrderPos($request->request->get("iSortCol_0"));
@@ -194,8 +200,9 @@ class DataTable
         $this->setParameters($request->request->get("parameters"));
         $this->setAmountView($request->request->getInt("sEcho"));
         
+        return $this;
     }
-    
+
     /**
      * Não implementado
      * @return int
@@ -214,7 +221,7 @@ class DataTable
      */
     public function addColumn($stringGet, $alias = "e")
     {
-        $this->gets[] = $alias.".".$stringGet;
+        $this->gets[] = $alias . "." . $stringGet;
         $this->typeParamenters[] = 'access';
 
         return $this;
@@ -234,7 +241,7 @@ class DataTable
 
         return $this;
     }
-    
+
     public function getGets()
     {
         return $this->gets;
@@ -335,25 +342,13 @@ class DataTable
         $this->methodDqlPart = $methodDqlPart;
     }
 
-    public function getParameter($index)
-    {
-        $parameters = $this->getParameters();
-        
-        return \array_key_exists($index, $parameters)? $parameters[$index] : null ;
-    }
-    
     public function getParameters()
     {
-        
-        if ($this->parameters && !is_array($this->parameters))
-        {
-            $this->parameters = json_decode("{".str_replace("|", ",", $this->parameters)."}", true);
+
+        if ($this->parameters && !is_array($this->parameters)) {
+            $this->parameters = json_decode("{" . str_replace("|", ",", $this->parameters) . "}", true);
         }
-        
-        if (!$this->parameters) {
-            $this->parameters = array();
-        }
-        
+
         return $this->parameters;
     }
 
@@ -361,7 +356,7 @@ class DataTable
     {
         $this->parameters = $parameters;
     }
-    
+
     /**
      * 
      * Get Dql Part
@@ -392,14 +387,13 @@ class DataTable
      */
     public function getDqlParam()
     {
-        if (!$this->dqlParam)
-        {
+        if (!$this->dqlParam) {
             $this->dqlParam = array();
         }
-        
+
         return $this->dqlParam;
     }
-    
+
     /**
      * 
      * Set Dql parameters
@@ -410,7 +404,7 @@ class DataTable
     {
         $this->dqlParam = $dqlParam;
     }
-    
+
     /**
      * 
      * Get Amount View
@@ -488,7 +482,7 @@ class DataTable
     {
         $paramReturn = array();
         $entityParam = \str_replace("AS", "as", $entityParam);
-        list($paramReturn["entity"] , $paramReturn["alias"]) = \explode("as", \trim($entityParam), 2);
+        list($paramReturn["entity"], $paramReturn["alias"]) = \explode("as", \trim($entityParam), 2);
         $paramReturn["entity"] = \trim($paramReturn["entity"]);
         $paramReturn["alias"] = \trim($paramReturn["alias"]);
         return $paramReturn;
@@ -507,21 +501,17 @@ class DataTable
      */
     public function getAssociatedEntities()
     {
-        if (!$this->entities)
-        {
+        if (!$this->entities) {
 
             $typeParamenters = $this->getTypeParamenters();
-            foreach ($this->getGets() as $key => $get)
-            {
-                if ($typeParamenters[$key] == "access")
-                {
+            foreach ($this->getGets() as $key => $get) {
+                if ($typeParamenters[$key] == "access") {
                     $this->setAssociatedEntitiesRecursive($get);
                 }
             }
         }
 
-        if (!$this->entities)
-        {
+        if (!$this->entities) {
             $this->entities = array();
         }
 
@@ -542,12 +532,10 @@ class DataTable
 
         $separate = \explode(".", $get);
 
-        if (count($separate) != 2)
-        {
+        if (count($separate) != 2) {
             $nameTable = $separate[1];
 
-            if (empty($this->entities[$nameTable]))
-            {
+            if (empty($this->entities[$nameTable])) {
                 $this->entities[$nameTable] = array();
                 $this->entities[$nameTable]['alias'] = "t" . count($this->entities);
                 $this->entities[$nameTable]['previous'] = $separate[0];
@@ -555,8 +543,7 @@ class DataTable
                 unset($separate[0]);
                 $this->setAssociatedEntitiesRecursive(\implode(".", $separate));
             }
-            else
-            {
+            else {
                 $this->entities[$nameTable]['select'] = count($separate) == 2;
                 unset($separate[0]);
                 $this->setAssociatedEntitiesRecursive(\implode(".", $separate));
@@ -571,12 +558,10 @@ class DataTable
     public function getAliasEntities()
     {
 
-        if (!$this->aliasEntities)
-        {
+        if (!$this->aliasEntities) {
             $this->aliasEntities = array($this->getAliasEntity());
 
-            foreach ($this->getAssociatedEntities() as $associatedEntity)
-            {
+            foreach ($this->getAssociatedEntities() as $associatedEntity) {
                 $this->aliasEntities[] = $associatedEntity['alias'];
             }
         }
@@ -591,8 +576,7 @@ class DataTable
      */
     public function getColumnOrder()
     {
-        if ($this->getColumnOrderPos() === null)
-        {
+        if ($this->getColumnOrderPos() === null) {
             return null;
         }
 
@@ -620,17 +604,14 @@ class DataTable
      */
     public function getColumns()
     {
-        if (!$this->columns)
-        {
+        if (!$this->columns) {
 
             $this->columns = array();
 
             $typeParam = $this->getTypeParamenters();
 
-            foreach ($this->getGets() as $key => $get)
-            {
-                if ($typeParam[$key] === 'access')
-                {
+            foreach ($this->getGets() as $key => $get) {
+                if ($typeParam[$key] === 'access') {
 
                     $getExploded = \explode(".", $get);
 
@@ -639,12 +620,10 @@ class DataTable
 
                     $associatedEntities = $this->getAssociatedEntities();
 
-                    if (isset($associatedEntities[$classOrder]['alias']))
-                    {
+                    if (isset($associatedEntities[$classOrder]['alias'])) {
                         $aliasEntityClassOrder = $associatedEntities[$classOrder]['alias'];
                     }
-                    else
-                    {
+                    else {
                         $aliasEntityClassOrder = $this->getAliasEntity();
                     }
 
@@ -668,29 +647,23 @@ class DataTable
     public function getData($entityManager, $collectionEntity = null)
     {
 
-        if (!$collectionEntity)
-        {
+        if (!$collectionEntity) {
             $collectionEntity = $this->getCollectionEntities(new QueryBuilder($entityManager), $entityManager);
         }
 
         $rows = array();
-        foreach ($collectionEntity as $entity)
-        {
+        foreach ($collectionEntity as $entity) {
             $row = array();
-            for ($i = 0; $i < count($this->getGets()); $i++)
-            {
+            for ($i = 0; $i < count($this->getGets()); $i++) {
                 $get = $this->getGets();
                 $types = $this->getTypeParamenters();
 
-                if ($types[$i] === "access")
-                {
+                if ($types[$i] === "access") {
                     $row[] = $this->getValueFromSyntaxTwig($this->twigLoaderString, $get[$i], array($this->getAliasEntity() => $entity));
                 }
-                else
-                {
+                else {
 
-                    if (!is_array($get[$i]))
-                    {
+                    if (!is_array($get[$i])) {
                         $get[$i] = json_decode("{" . str_replace("|", ",", $get[$i]) . "}", true);
                     }
 
@@ -720,7 +693,7 @@ class DataTable
     {
         return $twig->render("ZuniDataTableBundle:DataTable:actions.html.twig", array("actions" => $actions, "entity" => $entity));
     }
-    
+
     /**
      * 
      * Retorna a quantidade total de entidades que tem no banco 
@@ -751,22 +724,19 @@ class DataTable
     private function isValueValidFromSyntaxTwig(Twig_Environment $twig, $string, array $parameter, $posTest = 2)
     {
         $stringExploded = \explode(".", $string);
-        if (count($stringExploded) <= 2)
-        {
+        if (count($stringExploded) <= 2) {
             return true;
         }
 
         $stringConcat = $stringExploded[0];
 
-        for ($i = 1; $i < $posTest; $i++)
-        {
+        for ($i = 1; $i < $posTest; $i++) {
             $stringConcat .= "." . $stringExploded[$i];
         }
 
         $valid = ((boolean) \trim($twig->render($this->createStringTwigTest($stringConcat), $parameter)));
 
-        if (count($stringExploded) >= $posTest + 1 && $valid)
-        {
+        if (count($stringExploded) >= $posTest + 1 && $valid) {
             $valid = $this->isValueValidFromSyntaxTwig($twig, $string, $parameter, ++$posTest);
         }
 
@@ -803,8 +773,7 @@ TWIG;
     {
         $validString = $this->isValueValidFromSyntaxTwig($twig, $this->clrearMetodoTwig($string), $parameter);
 
-        if ($validString)
-        {
+        if ($validString) {
             return $twig->render("{{" . \trim($string) . "}}", $parameter);
         }
 
@@ -826,7 +795,7 @@ TWIG;
 
         return PropertyAccess::getPropertyAccessor()->getValue($newInstance, $this->getMethodDqlPart());
     }
-    
+
     /**
      * 
      * Converte o DQL part passado, para o verdadeira pedaço DQL 
@@ -838,35 +807,32 @@ TWIG;
     private function getRealDqlPart($dqlPart, $alias)
     {
         $open = strpos($dqlPart, "{");
-        
-        if($open === false)
-        {
+
+        if ($open === false) {
             return $dqlPart;
         }
-        
+
         $open++;
-        
+
         $close = strpos($dqlPart, "}");
         $pieceDql = substr($dqlPart, $open, $close - $open);
-        
-        $realPieceDql = $this->getAliasEntity().".".$pieceDql;
-        
-        if (substr_count($realPieceDql, ".") > 1)
-        {
+
+        $realPieceDql = $this->getAliasEntity() . "." . $pieceDql;
+
+        if (substr_count($realPieceDql, ".") > 1) {
             $realPieceDqlExploded = explode(".", $realPieceDql);
             $entityName = $realPieceDqlExploded[count($realPieceDqlExploded) - 2];
             $entityValue = $realPieceDqlExploded[count($realPieceDqlExploded) - 1];
-            
-            $realPieceDql = $alias[$entityName]['alias'].".".$entityValue;
+
+            $realPieceDql = $alias[$entityName]['alias'] . "." . $entityValue;
         }
-        
+
         $dqlPart = str_replace("{{$pieceDql}}", $realPieceDql, $dqlPart);
-        
-        if(strpos($dqlPart, "{") !== false)
-        {
+
+        if (strpos($dqlPart, "{") !== false) {
             $dqlPart = $this->getRealDqlPart($dqlPart, $alias);
         }
-        
+
         return $dqlPart;
     }
 
@@ -884,14 +850,11 @@ TWIG;
         $associatedEntities = $this->getAssociatedEntities();
         $aliasJoinClass = "";
 
-        foreach ($associatedEntities as $key => $assicuatedEntity)
-        {
-            if (isset($associatedEntities[$assicuatedEntity['previous']]))
-            {
+        foreach ($associatedEntities as $key => $assicuatedEntity) {
+            if (isset($associatedEntities[$assicuatedEntity['previous']])) {
                 $aliasJoinClass = $associatedEntities[$assicuatedEntity['previous']]['alias'];
             }
-            else
-            {
+            else {
                 $aliasJoinClass = $this->getAliasEntity();
             }
 
@@ -900,34 +863,28 @@ TWIG;
 
 
         $typeGet = $this->getTypeParamenters();
-        if ($typeGet[$this->getColumnOrderPos()] == "access")
-        {
+        if ($typeGet[$this->getColumnOrderPos()] == "access") {
             $query->orderBy($this->getColumnOrder(), $this->getTypeOrder());
         }
 
-        foreach ($this->getColumns() as $columns)
-        {
+        foreach ($this->getColumns() as $columns) {
             $query->orWhere($columns . " LIKE :search");
         }
 
-        if ($this->getDqlPart())
-        {
+        if ($this->getDqlPart()) {
             $query->andWhere("( " . $this->getRealDqlPart($this->getDqlPart(), $associatedEntities) . " )");
         }
-        
-        
-        if ($this->getMethodDqlPart())
-        {
+
+
+        if ($this->getMethodDqlPart()) {
             $query->andWhere("( " . $this->getDqlPartFromMethod($entityManager) . " )");
         }
 
         $query->setFirstResult($this->getStart())
                 ->setMaxResults($this->getLength());
 
-        if ($this->getDqlParam())
-        {
-            foreach ($this->getDqlParam() as $param => $value)
-            {
+        if ($this->getDqlParam()) {
+            foreach ($this->getDqlParam() as $param => $value) {
                 $query->setParameter($param, $value);
             }
         }
@@ -936,6 +893,5 @@ TWIG;
 
         return $query->getQuery()->getResult();
     }
-
 
 }
