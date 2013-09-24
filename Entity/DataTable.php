@@ -182,15 +182,15 @@ class DataTable
         }
 
         if ($request->request->get("typeParamenter")) {
-            $typeParamenters =\explode(",", $request->request->get("typeParamenter"));
+            $typeParamenters = \explode(",", $request->request->get("typeParamenter"));
             $this->setTypeParamenters($typeParamenters);
         }
-        
+
         if ($request->request->get("gets")) {
             $gets = \explode(",", $request->request->get("gets"));
             $this->setGets($gets);
         }
-        
+
         $this->setLength($request->request->get("iDisplayLength"));
         $this->setStart($request->request->get("iDisplayStart"));
         $this->setColumnOrderPos($request->request->get("iSortCol_0"));
@@ -199,7 +199,7 @@ class DataTable
         $this->setMethodDqlPart($request->request->get("methodDqlPart"));
         $this->setParameters($request->request->get("parameters"));
         $this->setAmountView($request->request->getInt("sEcho"));
-        
+
         return $this;
     }
 
@@ -340,6 +340,13 @@ class DataTable
     public function setMethodDqlPart($methodDqlPart)
     {
         $this->methodDqlPart = $methodDqlPart;
+    }
+
+    public function getParameter($index)
+    {
+        $parameters = $this->getParameters();
+
+        return array_key_exists($index, $parameters) ? $parameters[$index] : null;
     }
 
     public function getParameters()
