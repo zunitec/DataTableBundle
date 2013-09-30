@@ -875,7 +875,7 @@ TWIG;
         }
 
         foreach ($this->getColumns() as $columns) {
-            $query->orWhere($columns . " LIKE :search");
+            $query->orWhere("CHAR($columns) LIKE :search");
         }
 
         if ($this->getDqlPart()) {
