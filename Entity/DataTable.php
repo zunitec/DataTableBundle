@@ -488,8 +488,8 @@ class DataTable
     private function getEntityAndAliasName($entityParam)
     {
         $paramReturn = array();
-        $entityParam = \str_replace("AS", "as", $entityParam);
-        list($paramReturn["entity"], $paramReturn["alias"]) = \explode("as", \trim($entityParam), 2);
+        $entityParam = \str_replace(" AS ", " as ", $entityParam);
+        list($paramReturn["entity"], $paramReturn["alias"]) = \explode(" as ", \trim($entityParam), 2);
         $paramReturn["entity"] = \trim($paramReturn["entity"]);
         $paramReturn["alias"] = \trim($paramReturn["alias"]);
         return $paramReturn;
