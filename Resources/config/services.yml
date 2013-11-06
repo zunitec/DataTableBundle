@@ -1,0 +1,4 @@
+services: 
+    datatable.factory:
+        class: Zuni\DataTableBundle\Factory\DataTableFactory
+        arguments: ["@service_container"]

@@ -39,10 +39,8 @@ class DataTableController extends Controller
      */
     public function getData(Request $request) 
     {
-        $twigLoaderString = clone $this->get('twig');
-        $twigLoaderString->setLoader(new Twig_Loader_String());
-        $dataTable = new DataTable($request->request->get("entity"), $this->get("templating"), $twigLoaderString);
-        $dataTable->bootFromRequest($request);
+        $dataTable = $this->get("datatable.factory")->createDataTable($request->request->get("entity"));
+        
         return $dataTable->getData($this->getDoctrine()->getManager());
     }
     
