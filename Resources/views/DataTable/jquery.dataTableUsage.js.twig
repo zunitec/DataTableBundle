@@ -83,12 +83,6 @@ $(document).ready(function(){
              * Rota que responde o json de entidades
              */
             "route" : jTable.data("route") ? jTable.data("route") : null,
-            /**
-             * parametros que são passador para a rota, poderão ser usados 
-             * de quaisquer forma
-             * OBS : deverá ser passado no formato json, trocando ','(virgula) por '|'(pipe)
-             */
-            "parameters" : jTable.data("param") ? jTable.data("param") : null
        };
 
        /**
@@ -156,7 +150,14 @@ $(document).ready(function(){
                    aoData.push({"name": "numberOfColumns", "value": paramenters.numberOfColumns});
                    aoData.push({"name": "entity", "value": paramenters.entity});
                    aoData.push({"name": "methodDqlPart", "value": paramenters.methodDqlPart});
-                   aoData.push({"name": "parameters", "value": paramenters.parameters});
+                   /**
+                   * parametros que são passador para a rota, poderão ser usados 
+                   * de quaisquer forma
+                   * OBS : deverá ser passado no formato json, trocando ','(virgula) por '|'(pipe)
+                   * 
+                   * Coloquei direto aqui e não nos paramenters, para sempre pegar atualizado do HTML
+                   */
+                   aoData.push({"name": "parameters", "value": jTable.data("param") ? jTable.data("param") : null});
 
                },
                "fnPreDrawCallback": function( oSettings ) {
