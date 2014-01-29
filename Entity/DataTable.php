@@ -23,7 +23,7 @@ class DataTable
 
     /**
      *
-     * Métodos de acesso
+     * Mï¿½todos de acesso
      * 
      * @var string 
      */
@@ -31,7 +31,7 @@ class DataTable
 
     /**
      *
-     * Tipo de parametros, pode ser ação o acesso
+     * Tipo de parametros, pode ser aï¿½ï¿½o o acesso
      * 
      * @var array 
      */
@@ -47,7 +47,7 @@ class DataTable
 
     /**
      * Apelido da entidade, se a entidade for
-     * ZuniPessoaBundle:Cidade as cidade, o apelido será cidade
+     * ZuniPessoaBundle:Cidade as cidade, o apelido serï¿½ cidade
      * 
      * @var string 
      */
@@ -55,21 +55,21 @@ class DataTable
 
     /**
      *
-     * Offset, até onde será mostrada as entidades
+     * Offset, atï¿½ onde serï¿½ mostrada as entidades
      * 
      * @var integer 
      */
     private $length;
 
     /**
-     * páginação, de onde começa a mostrar a grid
+     * pï¿½ginaï¿½ï¿½o, de onde comeï¿½a a mostrar a grid
      * @var integer 
      */
     private $start;
 
     /**
      *
-     * Número da coluna que vai ser ordenada
+     * Nï¿½mero da coluna que vai ser ordenada
      * 
      * @var integer
      */
@@ -77,7 +77,7 @@ class DataTable
 
     /**
      *  
-     * tipo de ordenação 
+     * tipo de ordenaï¿½ï¿½o 
      * 
      * @var string ASC | DESC 
      */
@@ -95,7 +95,7 @@ class DataTable
     private $entities;
 
     /**
-     * array que contém todos os apelidos de todas as entidades
+     * array que contï¿½m todos os apelidos de todas as entidades
      * gerenciadas no atual DQL 
      * 
      * @var array 
@@ -110,7 +110,7 @@ class DataTable
 
     /**
      *
-     * Nome do método que contém um dql parte, para montar o filtro dql
+     * Nome do mï¿½todo que contï¿½m um dql parte, para montar o filtro dql
      * @var string 
      */
     private $methodDqlPart;
@@ -122,14 +122,14 @@ class DataTable
     private $parameters;
 
     /**
-     * DQL parte, usado para montar o sql que busca a coleção de entidades
+     * DQL parte, usado para montar o sql que busca a coleï¿½ï¿½o de entidades
      * @var stirng 
      */
     private $dqlPart;
 
     /**
      *
-     * DQL parametros, compõe o DQL parte
+     * DQL parametros, compï¿½e o DQL parte
      * @var array 
      */
     private $dqlParam;
@@ -152,19 +152,19 @@ class DataTable
 
     /**
      *
-     * Usado para renderizar os métodos
+     * Usado para renderizar os mï¿½todos
      * 
      * @var Twig_Environment 
      */
     private $twigLoaderString;
 
     /**
-     * Caminho do arquivo de ações para renderizar os botões da grid
+     * Caminho do arquivo de aï¿½ï¿½es para renderizar os botï¿½es da grid
      * 
      * @var string
      */
     private $pathFileActions;
-    
+
     /**
      * Construtor
      */
@@ -211,7 +211,7 @@ class DataTable
     }
 
     /**
-     * Não implementado
+     * Nï¿½o implementado
      * @return int
      */
     private function getId()
@@ -279,7 +279,6 @@ class DataTable
         $this->pathFileActions = $pathFileActions;
     }
 
-        
     public function getEntity()
     {
         return $this->entity;
@@ -499,7 +498,7 @@ class DataTable
      * ?>
      * </code></pre>
      * 
-     * @todo Testar quando não tiver alias
+     * @todo Testar quando nï¿½o tiver alias
      * @param string $entityParam passodo pelo request
      * @return array
      */
@@ -514,11 +513,11 @@ class DataTable
     }
 
     /**
-     * Retorna todas as entities que serão necessarias para pegar os 
+     * Retorna todas as entities que serï¿½o necessarias para pegar os 
      * valores de gets com nome e apelido 
      * 
-     * O Método irá retornar um array com o nome da entity coomo as chaves do array
-     * e em cada entity, terá uma chave alias e outra previous
+     * O Mï¿½todo irï¿½ retornar um array com o nome da entity coomo as chaves do array
+     * e em cada entity, terï¿½ uma chave alias e outra previous
      * 
      * @todo Recolocar $this->getGets no lugar de $gets
      * @todo Ignorar ponto de valores de parametros twig 
@@ -545,7 +544,7 @@ class DataTable
 
     /**
      * 
-     * Valida todoas as classes usadas para ter acesso ao método
+     * Valida todoas as classes usadas para ter acesso ao mï¿½todo
      * 
      * 
      * @param string $get Twig Syntax
@@ -567,8 +566,7 @@ class DataTable
 
                 unset($separate[0]);
                 $this->setAssociatedEntitiesRecursive(\implode(".", $separate));
-            }
-            else {
+            } else {
                 $this->entities[$nameTable]['select'] = count($separate) == 2;
                 unset($separate[0]);
                 $this->setAssociatedEntitiesRecursive(\implode(".", $separate));
@@ -595,7 +593,7 @@ class DataTable
     }
 
     /**
-     * Retorna a coluna que será ordenada
+     * Retorna a coluna que serï¿½ ordenada
      * 
      * @return string 
      */
@@ -638,7 +636,9 @@ class DataTable
             foreach ($this->getGets() as $key => $get) {
                 if ($typeParam[$key] === 'access') {
 
-                    $getExploded = \explode(".", $get);
+                    //Tem que fazer isso aqui, pois tem filtro twig onde Ã© necessÃ¡rio "." no construtor. Ex: number_format, dai dava mais explode que deveria
+                    $getFields = \explode("|", $get);
+                    $getExploded = \explode(".", $getFields[0]);
 
                     $classOrder = $getExploded[count($getExploded) - 2];
                     $columnOrder = $this->clrearMetodoTwig($getExploded[count($getExploded) - 1]);
@@ -647,8 +647,7 @@ class DataTable
 
                     if (isset($associatedEntities[$classOrder]['alias'])) {
                         $aliasEntityClassOrder = $associatedEntities[$classOrder]['alias'];
-                    }
-                    else {
+                    } else {
                         $aliasEntityClassOrder = $this->getAliasEntity();
                     }
 
@@ -666,7 +665,7 @@ class DataTable
      * 
      * @param type $entityManager Usado para montar o QueryBuilder
      * @param \Symfony\Bundle\TwigBundle\TwigEngine $twig
-     * @param \ArrayObject $collectionEntity Coleção de entidades
+     * @param \ArrayObject $collectionEntity Coleï¿½ï¿½o de entidades
      * @return array
      */
     public function getData($entityManager, $collectionEntity = null)
@@ -685,8 +684,7 @@ class DataTable
 
                 if ($types[$i] === "access") {
                     $row[] = $this->getValueFromSyntaxTwig($this->twigLoaderString, $get[$i], array($this->getAliasEntity() => $entity));
-                }
-                else {
+                } else {
 
                     if (!is_array($get[$i])) {
                         $get[$i] = json_decode("{" . str_replace("|", ",", $get[$i]) . "}", true);
@@ -710,7 +708,7 @@ class DataTable
     }
 
     /**
-     * Renderiza o html das ações
+     * Renderiza o html das aï¿½ï¿½es
      * 
      * @return string 
      */
@@ -739,7 +737,7 @@ class DataTable
      * Valida toda a string twig de forma recursiva, e retorna , 
      * renderizado
      * 
-     * @todo Alterar método para não testar as variaveis com Twig
+     * @todo Alterar mï¿½todo para nï¿½o testar as variaveis com Twig
      * Utilizar a classe PropertyAcess do symfony ( desempenho )
      * @param Twig_Environment $twig
      * @param stirng $string
@@ -807,7 +805,7 @@ TWIG;
 
     /**
      * 
-     * Invoca o método da entidade que possui a dql part
+     * Invoca o mï¿½todo da entidade que possui a dql part
      * 
      * @param \Doctrine\ORM\EntityManager $entityManager Usado para resolver o 
      * apelido da classe, converte ZuniPessoaBundle:Pessoa em seu namespace real
@@ -823,7 +821,7 @@ TWIG;
 
     /**
      * 
-     * Converte o DQL part passado, para o verdadeira pedaço DQL 
+     * Converte o DQL part passado, para o verdadeira pedaï¿½o DQL 
      * com os apelidos da entidade
      * 
      * @param string $param
@@ -862,9 +860,9 @@ TWIG;
     }
 
     /**
-     * Retorna uma coleção de itens com todos os requisitos para o mesmo 
+     * Retorna uma coleï¿½ï¿½o de itens com todos os requisitos para o mesmo 
      * order limit ... 
-     * @todo Mudar método para o Reposioty de DataTable
+     * @todo Mudar mï¿½todo para o Reposioty de DataTable
      */
     public function getCollectionEntities(QueryBuilder $query, $entityManager)
     {
@@ -878,8 +876,7 @@ TWIG;
         foreach ($associatedEntities as $key => $assicuatedEntity) {
             if (isset($associatedEntities[$assicuatedEntity['previous']])) {
                 $aliasJoinClass = $associatedEntities[$assicuatedEntity['previous']]['alias'];
-            }
-            else {
+            } else {
                 $aliasJoinClass = $this->getAliasEntity();
             }
 
