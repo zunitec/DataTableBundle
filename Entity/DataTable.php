@@ -166,6 +166,13 @@ class DataTable
     private $pathFileActions;
 
     /**
+     *  Campos para ordem na query, os campos de join não estão funcionando ainda
+     * 
+     * @var array 
+     */
+    private $queryColumnOrder;
+
+    /**
      * Construtor
      */
     public function __construct($entity, TwigEngine $twig, Twig_Environment $twigLoaderString)
@@ -697,7 +704,7 @@ class DataTable
             $rows[] = $row;
         }
 
-        $amountFromEntity = $this->getAmountFromEntity(new QueryBuilder($entityManager));
+        $amountFromEntity = $this->getAmountFromEntity(new QueryBuilder($entityManager), $entityManager);
 
         return $returnData = array(
             "sEcho" => $this->getAmountView(),
@@ -724,11 +731,11 @@ class DataTable
      * @param \Doctrine\ORM\QueryBuilder $query
      * @return integer
      */
-    private function getAmountFromEntity(QueryBuilder $query)
+    private function getAmountFromEntity(QueryBuilder $query, $entityManager)
     {
         $query->select('COUNT(' . $this->getAliasEntity() . ')');
         $query->from($this->getEntity(), $this->getAliasEntity());
-
+        $this->setQueryFilters($query, $entityManager);
         return $query->getQuery()->getSingleScalarResult();
     }
 
@@ -870,6 +877,34 @@ TWIG;
         $query->select($this->getAliasEntities());
         $query->from($this->getEntity(), $this->getAliasEntity());
 
+        $this->setQueryFilters($query, $entityManager);
+
+        $typeGet = $this->getTypeParamenters();
+        if ($typeGet[$this->getColumnOrderPos()] == "access") {
+            $query->orderBy($this->getColumnOrder(), $this->getTypeOrder());
+        }
+
+        if ($this->getQueryColumnOrder()) {
+            foreach ($this->getQueryColumnOrder() as $column => $type) {
+                $query->orderBy($column, $type);
+            }
+        }
+
+        $query->setFirstResult($this->getStart())
+                ->setMaxResults($this->getLength());
+
+        return $query->getQuery()->getResult();
+    }
+
+    /**
+     * 
+     * Separado para uso no getCollectionEntities e getAmountFromEntity
+     * 
+     * @param \Doctrine\ORM\QueryBuilder $query
+     * @param type $entityManager
+     */
+    private function setQueryFilters(QueryBuilder &$query, $entityManager)
+    {
         $associatedEntities = $this->getAssociatedEntities();
         $aliasJoinClass = "";
 
@@ -881,12 +916,6 @@ TWIG;
             }
 
             $query->leftJoin($aliasJoinClass . "." . $key, $assicuatedEntity['alias']);
-        }
-
-
-        $typeGet = $this->getTypeParamenters();
-        if ($typeGet[$this->getColumnOrderPos()] == "access") {
-            $query->orderBy($this->getColumnOrder(), $this->getTypeOrder());
         }
 
         foreach ($this->getColumns() as $columns) {
@@ -902,9 +931,6 @@ TWIG;
             $query->andWhere("( " . $this->getDqlPartFromMethod($entityManager) . " )");
         }
 
-        $query->setFirstResult($this->getStart())
-                ->setMaxResults($this->getLength());
-
         if ($this->getDqlParam()) {
             foreach ($this->getDqlParam() as $param => $value) {
                 $query->setParameter($param, $value);
@@ -912,8 +938,27 @@ TWIG;
         }
 
         $query->setParameter("search", "%" . \strtolower($this->getSearch()) . "%");
+    }
 
-        return $query->getQuery()->getResult();
+    /**
+     * 
+     * Não está funcionando para tabelas do join ainda
+     * 
+     * @param type $column
+     * @param type $type
+     * @param type $alias
+     */
+    public function addQueryColumnOrder($column, $type, $alias = 'e')
+    {
+        if ($this->queryColumnOrder === null) {
+            $this->queryColumnOrder = array();
+        }
+        $this->queryColumnOrder[$alias . '.' . $column] = $type;
+    }
+
+    public function getQueryColumnOrder()
+    {
+        return $this->queryColumnOrder;
     }
 
 }
