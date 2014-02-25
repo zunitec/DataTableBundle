@@ -69,19 +69,10 @@ class DataTable
 
     /**
      *
-     * N�mero da coluna que vai ser ordenada
-     * 
-     * @var integer
+     * Array com ordernacao da tela
+     * @var array
      */
-    private $columnOrderPos;
-
-    /**
-     *  
-     * tipo de ordena��o 
-     * 
-     * @var string ASC | DESC 
-     */
-    private $typeOrder;
+    private $order;
 
     /**
      * Filtro geral do datatable
@@ -166,13 +157,6 @@ class DataTable
     private $pathFileActions;
 
     /**
-     *  Campos para ordem na query, os campos de join não estão funcionando ainda
-     * 
-     * @var array 
-     */
-    private $queryColumnOrder;
-
-    /**
      * Construtor
      */
     public function __construct($entity, TwigEngine $twig, Twig_Environment $twigLoaderString)
@@ -205,10 +189,19 @@ class DataTable
             $this->setGets($gets);
         }
 
+        $qtdOrder = $request->request->get("iSortingCols");
+        if ($qtdOrder) {
+            $order = array();
+            for ($index = 0; $index < $qtdOrder; $index++) {
+                $posicao = $request->request->get("iSortCol_" . $index);
+                $tipo = $request->request->get("sSortDir_" . $index);
+                $order[$posicao] = $tipo;
+            }
+            $this->setOrder($order);
+        }
+
         $this->setLength($request->request->get("iDisplayLength"));
         $this->setStart($request->request->get("iDisplayStart"));
-        $this->setColumnOrderPos($request->request->get("iSortCol_0"));
-        $this->setTypeOrder($request->request->get("sSortDir_0"));
         $this->setSearch($request->request->get("sSearch"));
         $this->setMethodDqlPart($request->request->get("methodDqlPart"));
         $this->setParameters($request->request->get("parameters"));
@@ -324,26 +317,6 @@ class DataTable
     public function setStart($start)
     {
         $this->start = $start;
-    }
-
-    public function getColumnOrderPos()
-    {
-        return $this->columnOrderPos;
-    }
-
-    public function setColumnOrderPos($columnOrder)
-    {
-        $this->columnOrderPos = $columnOrder;
-    }
-
-    public function getTypeOrder()
-    {
-        return $this->typeOrder;
-    }
-
-    public function setTypeOrder($typeOrder)
-    {
-        $this->typeOrder = $typeOrder;
     }
 
     public function getSearch()
@@ -482,6 +455,29 @@ class DataTable
 
     /**
      * 
+     * Array com as ordenacoes da tela. Está na ordem que deve ser ordenado, o key é a posicao da coluna e o value é o tipo de ordenacao
+     * 
+     * @return array
+     */
+    public function getOrder()
+    {
+        if ($this->order === null) {
+            $this->order = array();
+        }
+        return $this->order;
+    }
+
+    /**
+     * 
+     * @param type array
+     */
+    public function setOrder($order)
+    {
+        $this->order = $order;
+    }
+
+    /**
+     * 
      * Separa o apelido do nome da entidade, e seta os dois atributos
      * 
      * @param strin $entity ZuniPessoaBundle:Cidade as cidade
@@ -600,18 +596,14 @@ class DataTable
     }
 
     /**
-     * Retorna a coluna que ser� ordenada
+     * Retorna a coluna que ser� ordenada pela posicao
      * 
      * @return string 
      */
-    public function getColumnOrder()
+    public function getColumnOrder($pos)
     {
-        if ($this->getColumnOrderPos() === null) {
-            return null;
-        }
-
         $columns = $this->getColumns();
-        return $columns[$this->getColumnOrderPos()];
+        return $columns[$pos];
     }
 
     /**
@@ -880,13 +872,9 @@ TWIG;
         $this->setQueryFilters($query, $entityManager);
 
         $typeGet = $this->getTypeParamenters();
-        if ($typeGet[$this->getColumnOrderPos()] == "access") {
-            $query->orderBy($this->getColumnOrder(), $this->getTypeOrder());
-        }
-
-        if ($this->getQueryColumnOrder()) {
-            foreach ($this->getQueryColumnOrder() as $column => $type) {
-                $query->orderBy($column, $type);
+        foreach ($this->getOrder() as $pos => $type) {
+            if ($typeGet[$pos] == "access") {
+                $query->addOrderBy($this->getColumnOrder($pos), $type);
             }
         }
 
@@ -938,27 +926,6 @@ TWIG;
         }
 
         $query->setParameter("search", "%" . \strtolower($this->getSearch()) . "%");
-    }
-
-    /**
-     * 
-     * Não está funcionando para tabelas do join ainda
-     * 
-     * @param type $column
-     * @param type $type
-     * @param type $alias
-     */
-    public function addQueryColumnOrder($column, $type, $alias = 'e')
-    {
-        if ($this->queryColumnOrder === null) {
-            $this->queryColumnOrder = array();
-        }
-        $this->queryColumnOrder[$alias . '.' . $column] = $type;
-    }
-
-    public function getQueryColumnOrder()
-    {
-        return $this->queryColumnOrder;
     }
 
 }

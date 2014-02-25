@@ -83,6 +83,10 @@ $(document).ready(function(){
              * Rota que responde o json de entidades
              */
             "route" : jTable.data("route") ? jTable.data("route") : null,
+            /**
+             * Colunas para ordenacao passar como data-sort='desc' | 'asc' e pode definir o data-sort-order de 1 a N (Para passar a ordem da ordenacao)
+             */
+            "aaSorting" : [],
        };
 
        /**
@@ -99,6 +103,16 @@ $(document).ready(function(){
             var sWidth = $(element).data("table-width") ? $(element).data("table-width") : null;
             parameters.columns.push({ "bSortable": sort, "sClass": $(element).attr('class'), "sWidth": sWidth});
 
+            var sort = $(element).data("sort");
+            if(sort){
+                var order = $(element).data("sort-order");
+                if( order !== null){
+                    parameters.aaSorting.splice(parseInt(order)-1,0,[index, sort]);
+                } else {
+                    parameters.aaSorting.push([index, sort]);
+                }
+            }
+            
             //incrementa mais uma coluna
             parameters.numberOfColumns++;
 
@@ -136,6 +150,7 @@ $(document).ready(function(){
        (
            {
                "aoColumns" : paramenters.columns ,
+               "aaSorting": paramenters.aaSorting,
                "bProcessing": true,
                "bServerSide": true,
                "sAjaxSource": paramenters.route ? paramenters.route : "{{path("zuni_datatable_datatable_grid")}}",
