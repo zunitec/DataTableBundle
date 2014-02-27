@@ -153,6 +153,7 @@ $(document).ready(function(){
                "aaSorting": paramenters.aaSorting,
                "bProcessing": true,
                "bServerSide": true,
+               "sCharSet": "utf-8",
                "sAjaxSource": paramenters.route ? paramenters.route : "{{path("zuni_datatable_datatable_grid")}}",
                "sServerMethod": "POST",
                "fnRowCallback": function( nRow, aData, iDisplayIndex ) {
